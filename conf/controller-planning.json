@@ -1,6 +1,6 @@
 {
 	"class": "pddl_executor.PDDL_Executor",
 	"plan_path": "../res/planning.txt",
-	"algorithm": "A*",
-	"heuristic": "naive"
+	"algorithm": "Theta*",
+	"heuristic": "manhattan"
 }
