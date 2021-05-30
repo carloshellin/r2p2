@@ -1,4 +1,3 @@
-
 import path_planning as pp
 
 def children(point,grid):
@@ -49,10 +48,7 @@ def children(point,grid):
                      [(x+1, y), (x,y + 1), (x+1, y+1)]]
     return [link for link in links if link.value != 9]
 
-def CheckObst(nodo, grid):   
-	x = nodo[0]   
-	y = nodo[1]
-	
+def CheckObst(x, y, grid):   	
 	return (grid[int(x)][int(y)].value >= 5)
  
 def lineofsight(parent, node, grid):
@@ -60,8 +56,8 @@ def lineofsight(parent, node, grid):
 	y0 = parent.grid_point[1]
 	x1 = node.grid_point[0]
 	y1 = node.grid_point[1]
-	dy = y1 - y0
 	dx = x1 - x0
+	dy = y1 - y0
 	f = 0
 	
 	if dy < 0:
@@ -79,27 +75,31 @@ def lineofsight(parent, node, grid):
 	if dx >= dy:
 		while x0 != x1:
 			f += dy
+			gx = x0 + (sx - 1) / 2
+			gy = y0 + (sy - 1) / 2
 			if f >= dx:
-				if CheckObst((x0 + ((sx - 1) / 2), y0 + ((sy - 1) / 2)), grid):
+				if CheckObst(gx, gy, grid):
 					return False
 				y0 += sy
 				f -= dx
-			if f != 0 and CheckObst((x0 + ((sx - 1) / 2), y0 + ((sy - 1) / 2)), grid):
+			if f != 0 and CheckObst(gx, gy, grid):
 				return False
-			if dy == 0 and CheckObst((x0 + ((sx - 1) / 2), y0), grid) and CheckObst((x0 + ((sx - 1) / 2), y0 - 1), grid):
+			if dy == 0 and CheckObst(gx, y0, grid) and CheckObst(gx, y0 - 1, grid):
 				return False
 			x0 += sx
 	else:
 		while y0 != y1:
 			f += dx
+			gx = x0 + (sx - 1) / 2
+			gy = y0 + (sy - 1) / 2
 			if f >= dy:
-				if CheckObst((x0 + ((sx - 1) / 2), y0 + ((sy - 1) / 2)), grid):
+				if CheckObst(gx, gy, grid):
 					return False
 				x0 += sx
 				f -= dy
-			if f != 0 and CheckObst((x0 + ((sx - 1) / 2), y0 + ((sy - 1) / 2)), grid):
+			if f != 0 and CheckObst(gx, gy, grid):
 				return False
-			if dx == 0 and CheckObst((x0, y0 + ((sy - 1) / 2)), grid) and CheckObst((x0 - 1, y0 + ((sy - 1) / 2)), grid):
+			if dx == 0 and CheckObst(x0, gy, grid) and CheckObst(x0 - 1, gy, grid):
 				return False
 			y0 += sy
 	
@@ -136,32 +136,32 @@ def search_theta(start, goal, grid, heur='naive'):
 			#If it is already in the closed set, skip it
 			if node in closedset:
 				continue
-			#Otherwise if it is already in the open set
-			if node in openset:
-				if current.parent != None and lineofsight(current.parent, node, grid):
-					# Path 2
-					new_g = current.parent.G + current.parent.move_cost(node)
+			if current.parent != None and lineofsight(current.parent, node, grid):
+				# Path 2
+				new_g = current.parent.G + current.parent.move_cost(node)
+				if node in openset:
 					if node.G > new_g:
 						node.G = new_g
 						node.parent = current.parent
 				else:
-					# Path 1
-					#Check if we beat the G score 
-					new_g = current.G + current.move_cost(node)
+					node.G = new_g
+					node.H = pp.heuristic[heur](node, goal)
+					node.parent = current.parent
+					openset.add(node)
+			else:
+				# Path 1
+				new_g = current.G + current.move_cost(node)
+				if node in openset:
 					if node.G > new_g:
-						#If so, update the node to have a new parent
 						node.G = new_g
 						node.parent = current
-			else:
-				#If it isn't in the open set, calculate the G and H score for the node
-				node.G = current.G + current.move_cost(node)
-				node.H = pp.heuristic[heur](node, goal)
-				#Set the parent to our current item
-				node.parent = current
-				#Add it to the set
-				openset.add(node)
+				else:
+					node.G = new_g
+					node.H = pp.heuristic[heur](node, goal)
+					node.parent = current
+					openset.add(node)
+					
 	#Throw an exception if there is no path
 	raise ValueError('No Path Found')
 
 pp.register_search_method('Theta*', search_theta)
-	
